@@ -73,34 +73,6 @@
             .card { border-radius: 2.2rem; padding: 1.4rem; }
         }
 
-        /* ---- Title ---- */
-        .title {
-            text-align: center;
-            margin-bottom: 0.8rem;
-        }
-        .title h1 {
-            font-family: 'Secular One', 'Heebo', sans-serif;
-            font-size: 1.5rem;
-            font-weight: 400;
-            color: #1e1b4b;
-            margin: 0;
-            line-height: 1.4;
-        }
-        .title .vs {
-            font-weight: 600;
-            font-size: 0.6em;
-            color: #a1a1aa;
-            padding: 0 0.25em;
-        }
-        @media (max-height: 680px) {
-            .title { margin-bottom: 0.3rem; }
-            .title h1 { font-size: 1.15rem; }
-        }
-        @media (min-width: 400px) {
-            .title { margin-bottom: 1rem; }
-            .title h1 { font-size: 1.75rem; }
-        }
-
         /* ---- Players ---- */
         .players {
             display: flex;
@@ -140,7 +112,7 @@
             background: rgba(255,241,242,0.8);
             box-shadow: 0 0 20px rgba(251,113,133,0.12);
         }
-        .p-card.dimmed { opacity: 0.35; }
+        .p-card.dimmed { opacity: 1; }
 
         .avatar {
             width: 42px;
@@ -184,34 +156,6 @@
             font-weight: 400;
             position: relative;
             z-index: 1;
-            margin-bottom: 4px;
-        }
-
-        .p-score {
-            font-size: 1.5rem;
-            font-weight: 900;
-            line-height: 1;
-            margin-top: 4px;
-            padding-top: 6px;
-            border-top: 1.5px solid rgba(0,0,0,0.05);
-            width: 70%;
-            text-align: center;
-            font-variant-numeric: tabular-nums;
-        }
-        .p1 .p-score { color: #4f46e5; }
-        .p2 .p-score { color: #dc2626; }
-        @media (max-height: 680px) {
-            .p-score { font-size: 1.1rem; margin-top: 2px; padding-top: 3px; }
-        }
-        @media (min-width: 400px) {
-            .p-score { font-size: 1.8rem; padding-top: 8px; margin-top: 6px; }
-        }
-
-        .score-pop { animation: sPop 0.5s cubic-bezier(0.34,1.56,0.64,1); }
-        @keyframes sPop {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.5); }
-            100% { transform: scale(1); }
         }
 
         .vs-col {
@@ -221,28 +165,13 @@
             justify-content: center;
             padding: 0 2px;
             min-width: 38px;
-            gap: 6px;
         }
-        .vs-text {
-            font-size: 0.6rem;
-            font-weight: 700;
-            color: #d4d4d8;
-            letter-spacing: 0.08em;
-        }
-        .draw-wrap {
-            text-align: center;
-        }
-        .draw-label {
-            font-size: 0.6rem;
-            font-weight: 500;
-            color: #a1a1aa;
-        }
-        .draw-num {
-            font-size: 0.95rem;
-            font-weight: 800;
-            color: #b4b4be;
-            line-height: 1.2;
-            font-variant-numeric: tabular-nums;
+        .vs-label {
+            font-family: 'Secular One', 'Heebo', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 400;
+            color: #c7c7cc;
+            line-height: 1;
         }
 
         /* ---- Board ---- */
@@ -515,10 +444,6 @@
     <div class="game-wrap">
         <div class="card" id="card">
 
-            <div class="title">
-                <h1>שינה <span class="vs">או</span> הזעקה</h1>
-            </div>
-
             <div class="players">
                 <div id="p1" class="p-card p1 glow-blue">
                     <div class="avatar">
@@ -526,14 +451,10 @@
                     </div>
                     <div class="p-name">שינה</div>
                     <div class="p-sub">אתה</div>
-                    <div class="p-score" id="score-x">0</div>
                 </div>
 
                 <div class="vs-col">
-                    <div class="draw-wrap">
-                        <div class="draw-label">תיקו</div>
-                        <div class="draw-num" id="score-draw">0</div>
-                    </div>
+                    <div class="vs-label">או</div>
                 </div>
 
                 <div id="p2" class="p-card p2 dimmed">
@@ -542,7 +463,6 @@
                     </div>
                     <div class="p-name">הזעקה</div>
                     <div class="p-sub">AI</div>
-                    <div class="p-score" id="score-o">0</div>
                 </div>
             </div>
 
@@ -565,9 +485,6 @@
         const card = $('card');
         const p1Card = $('p1');
         const p2Card = $('p2');
-        const scoreXEl = $('score-x');
-        const scoreOEl = $('score-o');
-        const scoreDrawEl = $('score-draw');
         const statusEl = $('status');
         const IMG_X = "https://static.wixstatic.com/media/b4f4e1_0ec1b2ea736b439ba5fad866de445cf2~mv2.gif";
         const IMG_O = "https://static.wixstatic.com/media/b4f4e1_262fcc7c26ae454d85ecec0dbd39f6e1~mv2.gif";
@@ -576,7 +493,6 @@
 
         let board = Array(9).fill('');
         let active = true, thinking = false;
-        let scores = { X: 0, O: 0, draw: 0 };
 
         // ---- Audio ----
         const AC = window.AudioContext || window.webkitAudioContext;
@@ -725,13 +641,6 @@
             void el.offsetWidth;
             el.classList.add(cls);
             setTimeout(() => el.classList.remove(cls), 600);
-        }
-
-        function popEl(el) {
-            el.classList.remove('score-pop');
-            void el.offsetWidth;
-            el.classList.add('score-pop');
-            setTimeout(() => el.classList.remove('score-pop'), 600);
         }
 
         // ---- Board ----
@@ -886,9 +795,6 @@
             shake(card, 'big-shake');
 
             if (winner === 'X') {
-                scores.X++;
-                scoreXEl.textContent = scores.X;
-                popEl(scoreXEl);
                 sfxWin();
                 confetti('#6366f1');
                 screenFlash('rgba(99,102,241,0.1)');
@@ -896,9 +802,6 @@
                 spawnEmojis('🎉', 10);
                 setStatus('ניצחת! 🎉', 'green', 'השינה שולטת!');
             } else {
-                scores.O++;
-                scoreOEl.textContent = scores.O;
-                popEl(scoreOEl);
                 sfxLose();
                 screenFlash('rgba(225,29,72,0.08)');
                 spawnEmojis('😱', 25);
@@ -909,9 +812,6 @@
         function endDraw() {
             active = false;
             thinking = false;
-            scores.draw++;
-            scoreDrawEl.textContent = scores.draw;
-            popEl(scoreDrawEl);
             sfxDraw();
             setStatus('תיקו! 🤝', 'orange', 'אף אחד לא ניצח');
         }
