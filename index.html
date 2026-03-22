@@ -1,0 +1,932 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>איקס עיגול אסטרטגי - שינה נגד הזעקה</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700;800;900&family=Secular+One&display=swap');
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            touch-action: manipulation;
+        }
+
+        body {
+            font-family: 'Heebo', sans-serif;
+            min-height: 100vh;
+            min-height: 100dvh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #eef0fb;
+        }
+
+        canvas#bg {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+        }
+
+        .game-wrap {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 400px;
+            padding: 6px;
+            max-height: 100vh;
+            max-height: 100dvh;
+            display: flex;
+            align-items: center;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.82);
+            backdrop-filter: blur(30px);
+            border: 1.5px solid rgba(255,255,255,0.6);
+            border-radius: 1.8rem;
+            padding: 1rem;
+            box-shadow:
+                0 0 60px rgba(139, 92, 246, 0.06),
+                0 20px 50px rgba(0,0,0,0.06);
+            width: 100%;
+            overflow-y: auto;
+            max-height: calc(100vh - 12px);
+            max-height: calc(100dvh - 12px);
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .card::-webkit-scrollbar { display: none; }
+
+        @media (min-width: 400px) {
+            .game-wrap { padding: 10px; }
+            .card { border-radius: 2.2rem; padding: 1.4rem; }
+        }
+
+        /* ---- Title ---- */
+        .title {
+            text-align: center;
+            margin-bottom: 0.8rem;
+        }
+        .title h1 {
+            font-family: 'Secular One', 'Heebo', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 400;
+            color: #1e1b4b;
+            margin: 0;
+            line-height: 1.4;
+        }
+        .title .vs {
+            font-weight: 600;
+            font-size: 0.6em;
+            color: #a1a1aa;
+            padding: 0 0.25em;
+        }
+        @media (min-width: 400px) {
+            .title { margin-bottom: 1rem; }
+            .title h1 { font-size: 1.75rem; }
+        }
+
+        /* ---- Players ---- */
+        .players {
+            display: flex;
+            align-items: stretch;
+            gap: 6px;
+            margin-bottom: 0.8rem;
+        }
+        .p-card {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 10px 6px 8px;
+            border-radius: 1rem;
+            border: 2px solid transparent;
+            background: rgba(255,255,255,0.5);
+            transition: all 0.4s cubic-bezier(0.4,0,0.2,1);
+            position: relative;
+            overflow: hidden;
+        }
+        @media (min-width: 400px) {
+            .players { gap: 10px; margin-bottom: 1rem; }
+            .p-card { padding: 12px 8px 10px; border-radius: 1.2rem; }
+        }
+
+        .p-card.glow-blue {
+            border-color: #818cf8;
+            background: rgba(238,242,255,0.8);
+            box-shadow: 0 0 20px rgba(99,102,241,0.12);
+        }
+        .p-card.glow-red {
+            border-color: #fb7185;
+            background: rgba(255,241,242,0.8);
+            box-shadow: 0 0 20px rgba(251,113,133,0.12);
+        }
+        .p-card.dimmed { opacity: 0.35; }
+
+        .avatar {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            padding: 2px;
+            margin-bottom: 6px;
+        }
+        @media (min-width: 400px) {
+            .avatar { width: 52px; height: 52px; padding: 2.5px; margin-bottom: 8px; }
+        }
+        .p1 .avatar { background: linear-gradient(135deg, #818cf8, #6366f1, #a78bfa); }
+        .p2 .avatar { background: linear-gradient(135deg, #fb7185, #ef4444, #f97316); }
+        .avatar img {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .p-name {
+            font-size: 0.85rem;
+            font-weight: 700;
+            position: relative;
+            z-index: 1;
+            line-height: 1.3;
+        }
+        @media (min-width: 400px) {
+            .p-name { font-size: 0.95rem; }
+        }
+        .p1 .p-name { color: #4338ca; }
+        .p2 .p-name { color: #be123c; }
+
+        .p-sub {
+            font-size: 0.7rem;
+            color: #94a3b8;
+            font-weight: 400;
+            position: relative;
+            z-index: 1;
+            margin-bottom: 4px;
+        }
+
+        .p-score {
+            font-size: 1.5rem;
+            font-weight: 900;
+            line-height: 1;
+            margin-top: 4px;
+            padding-top: 6px;
+            border-top: 1.5px solid rgba(0,0,0,0.05);
+            width: 70%;
+            text-align: center;
+            font-variant-numeric: tabular-nums;
+        }
+        .p1 .p-score { color: #4f46e5; }
+        .p2 .p-score { color: #dc2626; }
+        @media (min-width: 400px) {
+            .p-score { font-size: 1.8rem; padding-top: 8px; margin-top: 6px; }
+        }
+
+        .score-pop { animation: sPop 0.5s cubic-bezier(0.34,1.56,0.64,1); }
+        @keyframes sPop {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.5); }
+            100% { transform: scale(1); }
+        }
+
+        .vs-col {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 0 2px;
+            min-width: 38px;
+            gap: 6px;
+        }
+        .vs-text {
+            font-size: 0.6rem;
+            font-weight: 700;
+            color: #d4d4d8;
+            letter-spacing: 0.08em;
+        }
+        .draw-wrap {
+            text-align: center;
+        }
+        .draw-label {
+            font-size: 0.6rem;
+            font-weight: 500;
+            color: #a1a1aa;
+        }
+        .draw-num {
+            font-size: 0.95rem;
+            font-weight: 800;
+            color: #b4b4be;
+            line-height: 1.2;
+            font-variant-numeric: tabular-nums;
+        }
+
+        /* ---- Board ---- */
+        .board {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            padding: 10px;
+            border-radius: 1.2rem;
+            background: rgba(0,0,0,0.03);
+            border: 1px solid rgba(0,0,0,0.04);
+            margin-bottom: 0.6rem;
+            position: relative;
+        }
+        @media (min-width: 400px) {
+            .board { gap: 10px; padding: 12px; border-radius: 1.5rem; margin-bottom: 1rem; }
+        }
+
+        .cell {
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 0.9rem;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            border: 2px solid rgba(0,0,0,0.04);
+            background: white;
+            transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+            min-height: 0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        }
+        @media (min-width: 400px) {
+            .cell { border-radius: 1.1rem; }
+        }
+        .cell::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: inherit;
+            background: radial-gradient(circle at 50% 50%, rgba(99,102,241,0.06), transparent 70%);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .cell:hover:not(.occupied):not(.disabled) {
+            transform: translateY(-3px) scale(1.05);
+            border-color: rgba(99,102,241,0.2);
+            box-shadow: 0 8px 25px rgba(99,102,241,0.1);
+        }
+        .cell:hover:not(.occupied):not(.disabled)::before { opacity: 1; }
+        .cell:active:not(.occupied):not(.disabled) {
+            transform: scale(0.94);
+            transition-duration: 0.08s;
+        }
+        .cell.disabled { cursor: default; }
+
+        .cell.cell-x {
+            background: linear-gradient(145deg, #eef2ff, #e0e7ff);
+            border-color: rgba(99,102,241,0.15);
+            box-shadow: 0 2px 12px rgba(99,102,241,0.08);
+        }
+        .cell.cell-o {
+            background: linear-gradient(145deg, #fff1f2, #ffe4e6);
+            border-color: rgba(225,29,72,0.12);
+            box-shadow: 0 2px 12px rgba(225,29,72,0.06);
+        }
+
+        .cell-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            pointer-events: none;
+            transform: scale(1.12);
+            position: relative;
+            z-index: 2;
+        }
+        .cell-img.pop {
+            animation: popIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        @keyframes popIn {
+            0% { opacity: 0; transform: scale(0) rotate(-30deg); }
+            50% { transform: scale(1.3) rotate(8deg); }
+            100% { opacity: 1; transform: scale(1.12) rotate(0); }
+        }
+
+        .cell.winning-cell {
+            border-color: #10b981 !important;
+            background: linear-gradient(145deg, #d1fae5, #a7f3d0) !important;
+            box-shadow: 0 0 25px rgba(16,185,129,0.2) !important;
+            animation: winBounce 0.8s ease-in-out infinite;
+        }
+        @keyframes winBounce {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.08); }
+        }
+
+        /* ---- Status ---- */
+        .status {
+            text-align: center;
+            min-height: 42px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 0.6rem;
+        }
+        .status-main {
+            font-size: 1rem;
+            font-weight: 700;
+        }
+        @media (min-width: 400px) {
+            .status { min-height: 48px; margin-bottom: 0.8rem; }
+            .status-main { font-size: 1.1rem; }
+        }
+        .status-main.blue { color: #4338ca; }
+        .status-main.red { color: #be123c; }
+        .status-main.green { color: #047857; }
+        .status-main.orange { color: #b45309; }
+
+        .status-sub {
+            font-size: 0.75rem;
+            color: #94a3b8;
+            font-weight: 400;
+            margin-top: 3px;
+        }
+        .status-enter { animation: sIn 0.35s ease-out; }
+        @keyframes sIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .thinking-dots {
+            display: flex;
+            gap: 5px;
+            margin-top: 6px;
+        }
+        .thinking-dots span {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #e11d48;
+            animation: dotBounce 1s ease-in-out infinite;
+        }
+        .thinking-dots span:nth-child(2) { animation-delay: 0.15s; }
+        .thinking-dots span:nth-child(3) { animation-delay: 0.3s; }
+        @keyframes dotBounce {
+            0%, 60%, 100% { transform: translateY(0); opacity: 0.3; }
+            30% { transform: translateY(-10px); opacity: 1; }
+        }
+
+        /* ---- Buttons ---- */
+        .btn-reset {
+            width: 100%;
+            padding: 13px;
+            border-radius: 1rem;
+            border: none;
+            font-family: inherit;
+            font-weight: 700;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6, #a78bfa);
+            color: white;
+            box-shadow: 0 4px 20px rgba(99,102,241,0.2);
+            position: relative;
+            overflow: hidden;
+            min-height: 44px;
+        }
+        @media (min-width: 400px) {
+            .btn-reset { padding: 14px; font-size: 0.95rem; }
+        }
+        .btn-reset:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(99,102,241,0.3);
+        }
+        .btn-reset:active { transform: scale(0.97); }
+        .btn-reset::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transform: translateX(-100%);
+            transition: transform 0.5s;
+        }
+        .btn-reset:hover::after { transform: translateX(100%); }
+
+        /* ---- Effects ---- */
+        .shake { animation: shakeIt 0.4s ease-out; }
+        @keyframes shakeIt {
+            0%, 100% { transform: translateX(0); }
+            20% { transform: translateX(-5px) rotate(-0.5deg); }
+            40% { transform: translateX(5px) rotate(0.5deg); }
+            60% { transform: translateX(-3px); }
+            80% { transform: translateX(3px); }
+        }
+
+        .big-shake { animation: bigShake 0.5s ease-out; }
+        @keyframes bigShake {
+            0%, 100% { transform: translate(0); }
+            15% { transform: translate(-7px, 2px) rotate(-1deg); }
+            30% { transform: translate(7px, -2px) rotate(1deg); }
+            45% { transform: translate(-5px, 1px); }
+            60% { transform: translate(5px, -1px); }
+            75% { transform: translate(-2px); }
+        }
+
+        .floating-emoji {
+            position: fixed;
+            pointer-events: none;
+            z-index: 200;
+            font-size: 2rem;
+            animation: emojiFloat 3s ease-out forwards;
+        }
+        @media (min-width: 400px) {
+            .floating-emoji { font-size: 2.8rem; }
+        }
+        @keyframes emojiFloat {
+            0% { transform: translateY(0) scale(0.5) rotate(0deg); opacity: 0; }
+            10% { transform: translateY(-20px) scale(1.2); opacity: 1; }
+            100% { transform: translateY(-400px) scale(0.3) rotate(360deg); opacity: 0; }
+        }
+
+        .confetti-bit {
+            position: fixed;
+            z-index: 200;
+            pointer-events: none;
+            border-radius: 2px;
+        }
+        @keyframes confettiFall {
+            0% { transform: translateY(0) rotate(0) scale(1); opacity: 1; }
+            80% { opacity: 0.8; }
+            100% { transform: translateY(100vh) rotate(1080deg) scale(0.2); opacity: 0; }
+        }
+
+        .particle {
+            position: fixed;
+            pointer-events: none;
+            z-index: 200;
+            border-radius: 50%;
+        }
+
+        .screen-flash {
+            position: fixed;
+            inset: 0;
+            z-index: 300;
+            pointer-events: none;
+            animation: flash 0.6s ease-out forwards;
+        }
+        @keyframes flash {
+            0% { opacity: 0.3; }
+            100% { opacity: 0; }
+        }
+
+    </style>
+</head>
+<body>
+    <canvas id="bg"></canvas>
+
+    <div class="game-wrap">
+        <div class="card" id="card">
+
+            <div class="title">
+                <h1>שינה <span class="vs">או</span> הזעקה</h1>
+            </div>
+
+            <div class="players">
+                <div id="p1" class="p-card p1 glow-blue">
+                    <div class="avatar">
+                        <img src="https://static.wixstatic.com/media/b4f4e1_0ec1b2ea736b439ba5fad866de445cf2~mv2.gif" alt="שינה" loading="eager">
+                    </div>
+                    <div class="p-name">שינה</div>
+                    <div class="p-sub">אתה</div>
+                    <div class="p-score" id="score-x">0</div>
+                </div>
+
+                <div class="vs-col">
+                    <div class="draw-wrap">
+                        <div class="draw-label">תיקו</div>
+                        <div class="draw-num" id="score-draw">0</div>
+                    </div>
+                </div>
+
+                <div id="p2" class="p-card p2 dimmed">
+                    <div class="avatar">
+                        <img src="https://static.wixstatic.com/media/b4f4e1_262fcc7c26ae454d85ecec0dbd39f6e1~mv2.gif" alt="הזעקה" loading="eager">
+                    </div>
+                    <div class="p-name">הזעקה</div>
+                    <div class="p-sub">AI</div>
+                    <div class="p-score" id="score-o">0</div>
+                </div>
+            </div>
+
+            <div class="board" id="board"></div>
+
+            <div class="status" id="status">
+                <div class="status-main blue status-enter">התור שלך 💤</div>
+                <div class="status-sub">בחר משבצת</div>
+            </div>
+
+            <button class="btn-reset" id="btn-reset">משחק חדש</button>
+        </div>
+    </div>
+
+
+    <script>
+    (() => {
+        const $ = id => document.getElementById(id);
+        const boardEl = $('board');
+        const card = $('card');
+        const p1Card = $('p1');
+        const p2Card = $('p2');
+        const scoreXEl = $('score-x');
+        const scoreOEl = $('score-o');
+        const scoreDrawEl = $('score-draw');
+        const statusEl = $('status');
+        const IMG_X = "https://static.wixstatic.com/media/b4f4e1_0ec1b2ea736b439ba5fad866de445cf2~mv2.gif";
+        const IMG_O = "https://static.wixstatic.com/media/b4f4e1_262fcc7c26ae454d85ecec0dbd39f6e1~mv2.gif";
+
+        const WINS = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+
+        let board = Array(9).fill('');
+        let active = true, thinking = false;
+        let scores = { X: 0, O: 0, draw: 0 };
+
+        // ---- Audio ----
+        const AC = window.AudioContext || window.webkitAudioContext;
+        let ac;
+        function ctx() { if (!ac) ac = new AC(); return ac; }
+
+        function tone(f, d, type='sine', v=0.1) {
+            try {
+                const c = ctx(), o = c.createOscillator(), g = c.createGain();
+                o.type = type; o.frequency.value = f;
+                g.gain.setValueAtTime(v, c.currentTime);
+                g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + d);
+                o.connect(g); g.connect(c.destination);
+                o.start(); o.stop(c.currentTime + d);
+            } catch(e) {}
+        }
+        function sfxPlace() { tone(700, 0.1, 'sine', 0.08); setTimeout(() => tone(900, 0.07, 'sine', 0.05), 40); }
+        function sfxComp() { tone(350, 0.12, 'triangle', 0.07); setTimeout(() => tone(280, 0.08, 'triangle', 0.04), 50); }
+        function sfxWin() { [523,659,784,1047].forEach((f,i) => setTimeout(() => tone(f, 0.2, 'sine', 0.08), i*100)); }
+        function sfxLose() { [400,350,300,220].forEach((f,i) => setTimeout(() => tone(f, 0.25, 'sawtooth', 0.04), i*130)); }
+        function sfxDraw() { tone(440, 0.25, 'triangle', 0.06); setTimeout(() => tone(440, 0.25, 'triangle', 0.06), 250); }
+
+        // ---- Background ----
+        (() => {
+            const c = $('bg'), cx = c.getContext('2d');
+            let w, h, orbs = [];
+
+            function resize() {
+                w = c.width = innerWidth;
+                h = c.height = innerHeight;
+                orbs = Array.from({length: Math.min(w < 500 ? 25 : 50, Math.floor(w*h/14000))}, () => ({
+                    x: Math.random()*w, y: Math.random()*h,
+                    r: Math.random()*3+1,
+                    dx: (Math.random()-0.5)*0.2, dy: (Math.random()-0.5)*0.2,
+                    hue: [240,260,320,340,180,40][Math.floor(Math.random()*6)],
+                    pulse: Math.random()*Math.PI*2,
+                    sat: Math.random()*40+40
+                }));
+            }
+
+            function draw() {
+                const grd = cx.createLinearGradient(0, 0, w, h);
+                grd.addColorStop(0, '#eef0fb');
+                grd.addColorStop(0.35, '#f3eeff');
+                grd.addColorStop(0.65, '#fef0f4');
+                grd.addColorStop(1, '#eefbf5');
+                cx.fillStyle = grd;
+                cx.fillRect(0, 0, w, h);
+
+                const t = Date.now() * 0.0008;
+
+                const g1 = cx.createRadialGradient(w*0.25, h*0.3, 0, w*0.25, h*0.3, w*0.45);
+                g1.addColorStop(0, 'rgba(99,102,241,0.06)'); g1.addColorStop(1, 'transparent');
+                cx.fillStyle = g1; cx.fillRect(0, 0, w, h);
+
+                const g2 = cx.createRadialGradient(w*0.8, h*0.6, 0, w*0.8, h*0.6, w*0.4);
+                g2.addColorStop(0, 'rgba(236,72,153,0.05)'); g2.addColorStop(1, 'transparent');
+                cx.fillStyle = g2; cx.fillRect(0, 0, w, h);
+
+                const g3 = cx.createRadialGradient(w*0.5, h*0.85, 0, w*0.5, h*0.85, w*0.35);
+                g3.addColorStop(0, 'rgba(52,211,153,0.04)'); g3.addColorStop(1, 'transparent');
+                cx.fillStyle = g3; cx.fillRect(0, 0, w, h);
+
+                orbs.forEach(o => {
+                    o.x += o.dx; o.y += o.dy;
+                    if (o.x < 0) o.x = w; if (o.x > w) o.x = 0;
+                    if (o.y < 0) o.y = h; if (o.y > h) o.y = 0;
+                    const a = 0.15 + Math.sin(t + o.pulse) * 0.1;
+                    cx.beginPath();
+                    cx.arc(o.x, o.y, o.r, 0, Math.PI * 2);
+                    cx.fillStyle = `hsla(${o.hue}, ${o.sat}%, 65%, ${a})`;
+                    cx.fill();
+                    if (o.r > 2) {
+                        cx.beginPath();
+                        cx.arc(o.x, o.y, o.r * 3, 0, Math.PI * 2);
+                        cx.fillStyle = `hsla(${o.hue}, ${o.sat}%, 65%, ${a * 0.08})`;
+                        cx.fill();
+                    }
+                });
+
+                requestAnimationFrame(draw);
+            }
+
+            resize(); draw();
+            addEventListener('resize', resize);
+        })();
+
+        // ---- Particles ----
+        const isMobile = window.innerWidth < 500;
+
+        function burst(x, y, color, n=14) {
+            for (let i=0; i<n; i++) {
+                const p = document.createElement('div');
+                p.className = 'particle';
+                const sz = Math.random()*7+3;
+                const angle = (Math.PI*2/n)*i + Math.random()*0.4;
+                const dist = Math.random()*70+30;
+                const dx = Math.cos(angle)*dist, dy = Math.sin(angle)*dist;
+                p.style.cssText = `left:${x}px;top:${y}px;width:${sz}px;height:${sz}px;background:${color};box-shadow:0 0 6px ${color};`;
+                p.animate([
+                    { transform: 'translate(0,0) scale(1)', opacity: 1 },
+                    { transform: `translate(${dx}px,${dy}px) scale(0)`, opacity: 0 }
+                ], { duration: Math.random()*400+300, easing: 'ease-out', fill: 'forwards' });
+                document.body.appendChild(p);
+                setTimeout(() => p.remove(), 900);
+            }
+        }
+
+        function confetti(mainColor) {
+            const colors = [mainColor,'#fbbf24','#a78bfa','#34d399','#f472b6','#60a5fa','#fb923c','#e879f9'];
+            const count = isMobile ? 40 : 70;
+            for (let i=0; i<count; i++) {
+                const c = document.createElement('div');
+                c.className = 'confetti-bit';
+                const sz = Math.random()*10+4;
+                c.style.cssText = `left:${Math.random()*100}vw;top:-15px;width:${sz}px;height:${sz*(Math.random()*0.6+0.4)}px;background:${colors[Math.floor(Math.random()*colors.length)]};border-radius:${Math.random()>0.5?'50%':'2px'};animation:confettiFall ${Math.random()*2+2}s ease-in ${Math.random()*0.7}s forwards;`;
+                document.body.appendChild(c);
+                setTimeout(() => c.remove(), 5000);
+            }
+        }
+
+        function screenFlash(color) {
+            const f = document.createElement('div');
+            f.className = 'screen-flash';
+            f.style.background = color;
+            document.body.appendChild(f);
+            setTimeout(() => f.remove(), 700);
+        }
+
+        function spawnEmojis(emoji, count=25) {
+            const n = isMobile ? Math.min(count, 12) : count;
+            for (let i=0; i<n; i++) {
+                const d = document.createElement('div');
+                d.innerText = emoji;
+                d.className = 'floating-emoji';
+                d.style.left = Math.random()*100+'vw';
+                d.style.top = (Math.random()*30+60)+'vh';
+                d.style.animationDelay = (Math.random()*1.5)+'s';
+                document.body.appendChild(d);
+                setTimeout(() => d.remove(), 3500);
+            }
+        }
+
+        function shake(el, cls='shake') {
+            el.classList.remove(cls);
+            void el.offsetWidth;
+            el.classList.add(cls);
+            setTimeout(() => el.classList.remove(cls), 600);
+        }
+
+        function popEl(el) {
+            el.classList.remove('score-pop');
+            void el.offsetWidth;
+            el.classList.add('score-pop');
+            setTimeout(() => el.classList.remove('score-pop'), 600);
+        }
+
+        // ---- Board ----
+        function render(animIdx=-1) {
+            boardEl.innerHTML = '';
+            board.forEach((cell, i) => {
+                const div = document.createElement('div');
+                div.className = 'cell';
+                if (thinking || !active) div.classList.add('disabled');
+
+                if (cell === 'X') div.classList.add('cell-x', 'occupied');
+                if (cell === 'O') div.classList.add('cell-o', 'occupied');
+
+                if (cell !== '') {
+                    const img = document.createElement('img');
+                    img.src = cell === 'X' ? IMG_X : IMG_O;
+                    img.alt = cell === 'X' ? 'שינה' : 'הזעקה';
+                    img.className = 'cell-img';
+                    if (i === animIdx) img.classList.add('pop');
+                    div.appendChild(img);
+                }
+
+                div.addEventListener('click', () => onCellClick(i));
+                boardEl.appendChild(div);
+            });
+        }
+
+        // ---- Click ----
+        function onCellClick(idx) {
+            if (!active || thinking || board[idx] !== '') {
+                if (board[idx] !== '' && active) {
+                    shake(boardEl.children[idx]);
+                }
+                return;
+            }
+
+            const cellEl = boardEl.children[idx];
+            const rect = cellEl.getBoundingClientRect();
+            burst(rect.left+rect.width/2, rect.top+rect.height/2, 'rgba(99,102,241,0.6)', 12);
+            sfxPlace();
+
+            board[idx] = 'X';
+            render(idx);
+
+            if (checkEnd()) return;
+
+            thinking = true;
+            updatePlayers();
+            render(idx);
+            setTimeout(doComputer, 600 + Math.random()*400);
+        }
+
+        // ---- Computer ----
+        function doComputer() {
+            if (!active) { thinking = false; return; }
+
+            const move = findBest();
+
+            const cells = boardEl.children;
+            if (cells[move]) {
+                const r = cells[move].getBoundingClientRect();
+                burst(r.left+r.width/2, r.top+r.height/2, 'rgba(225,29,72,0.5)', 12);
+            }
+            sfxComp();
+
+            board[move] = 'O';
+            render(move);
+
+            if (checkEnd()) return;
+
+            thinking = false;
+            updatePlayers();
+            render();
+        }
+
+        function checkWinner(b) {
+            for (const [a, c, d] of WINS) {
+                if (b[a] && b[a] === b[c] && b[a] === b[d]) return b[a];
+            }
+            return null;
+        }
+
+        function minimax(b, isMax, depth) {
+            const w = checkWinner(b);
+            if (w === 'O') return 10 - depth;
+            if (w === 'X') return -10 + depth;
+            if (!b.includes('')) return 0;
+
+            if (isMax) {
+                let best = -Infinity;
+                for (let i = 0; i < 9; i++) {
+                    if (b[i] !== '') continue;
+                    b[i] = 'O';
+                    best = Math.max(best, minimax(b, false, depth + 1));
+                    b[i] = '';
+                }
+                return best;
+            } else {
+                let best = Infinity;
+                for (let i = 0; i < 9; i++) {
+                    if (b[i] !== '') continue;
+                    b[i] = 'X';
+                    best = Math.min(best, minimax(b, true, depth + 1));
+                    b[i] = '';
+                }
+                return best;
+            }
+        }
+
+        function findBest() {
+            const moves = [];
+            for (let i = 0; i < 9; i++) {
+                if (board[i] !== '') continue;
+                board[i] = 'O';
+                const score = minimax(board, false, 0);
+                board[i] = '';
+                const noisy = score + (Math.random() * 16 - 8);
+                moves.push({ idx: i, score: noisy });
+            }
+
+            const best = moves.reduce((a, b) => a.score > b.score ? a : b);
+            return best.idx;
+        }
+
+        // ---- Check End ----
+        function checkEnd() {
+            for (const path of WINS) {
+                const [a, b, c] = path;
+                if (board[a] && board[a] === board[b] && board[a] === board[c]) {
+                    endGame(board[a], path);
+                    return true;
+                }
+            }
+
+            if (!board.includes('')) {
+                endDraw();
+                return true;
+            }
+
+            return false;
+        }
+
+        function endGame(winner, path) {
+            active = false;
+            thinking = false;
+
+            path.forEach(i => {
+                const cell = boardEl.children[i];
+                if (cell) cell.classList.add('winning-cell');
+            });
+
+            shake(card, 'big-shake');
+
+            if (winner === 'X') {
+                scores.X++;
+                scoreXEl.textContent = scores.X;
+                popEl(scoreXEl);
+                sfxWin();
+                confetti('#6366f1');
+                screenFlash('rgba(99,102,241,0.1)');
+                spawnEmojis('💤', 20);
+                spawnEmojis('🎉', 10);
+                setStatus('ניצחת! 🎉', 'green', 'השינה שולטת!');
+            } else {
+                scores.O++;
+                scoreOEl.textContent = scores.O;
+                popEl(scoreOEl);
+                sfxLose();
+                screenFlash('rgba(225,29,72,0.08)');
+                spawnEmojis('😱', 25);
+                setStatus('הזעקה ניצחה! 😱', 'red', 'נסה שוב...');
+            }
+        }
+
+        function endDraw() {
+            active = false;
+            thinking = false;
+            scores.draw++;
+            scoreDrawEl.textContent = scores.draw;
+            popEl(scoreDrawEl);
+            sfxDraw();
+            setStatus('תיקו! 🤝', 'orange', 'אף אחד לא ניצח');
+        }
+
+        // ---- UI ----
+        function updatePlayers() {
+            if (thinking) {
+                p2Card.classList.add('glow-red');
+                p2Card.classList.remove('dimmed');
+                p1Card.classList.remove('glow-blue');
+                p1Card.classList.add('dimmed');
+                setStatus('הזעקה חושבת... 🔥', 'red', '', true);
+            } else if (active) {
+                p1Card.classList.add('glow-blue');
+                p1Card.classList.remove('dimmed');
+                p2Card.classList.remove('glow-red');
+                p2Card.classList.add('dimmed');
+                setStatus('התור שלך 💤', 'blue', 'בחר משבצת');
+            }
+        }
+
+        function setStatus(main, color, sub='', dots=false) {
+            statusEl.innerHTML = `
+                <div class="status-main ${color} status-enter">${main}</div>
+                ${sub ? `<div class="status-sub">${sub}</div>` : ''}
+                ${dots ? '<div class="thinking-dots"><span></span><span></span><span></span></div>' : ''}
+            `;
+        }
+
+        // ---- Reset ----
+        function resetGame() {
+            board = Array(9).fill('');
+            active = true;
+            thinking = false;
+            updatePlayers();
+            render();
+        }
+
+        $('btn-reset').addEventListener('click', resetGame);
+
+        resetGame();
+    })();
+    </script>
+</body>
+</html>
