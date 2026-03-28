@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>איקס עיגול אסטרטגי - שינה נגד הזעקה</title>
+    <title>איקס עיגול אסטרטגי - שינה נגד אזעקה</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700;800;900&family=Secular+One&display=swap');
@@ -452,9 +452,9 @@
 
                 <div id="p2" class="p-card p2 dimmed">
                     <div class="avatar">
-                        <img src="https://static.wixstatic.com/media/b4f4e1_262fcc7c26ae454d85ecec0dbd39f6e1~mv2.gif" alt="הזעקה" loading="eager">
+                        <img src="https://static.wixstatic.com/media/b4f4e1_262fcc7c26ae454d85ecec0dbd39f6e1~mv2.gif" alt="אזעקה" loading="eager">
                     </div>
-                    <div class="p-name">הזעקה</div>
+                    <div class="p-name">אזעקה</div>
                     <div class="p-sub">AI</div>
                 </div>
             </div>
@@ -652,7 +652,7 @@
                 if (cell !== '') {
                     const img = document.createElement('img');
                     img.src = cell === 'X' ? IMG_X : IMG_O;
-                    img.alt = cell === 'X' ? 'שינה' : 'הזעקה';
+                    img.alt = cell === 'X' ? 'שינה' : 'אזעקה';
                     img.className = 'cell-img';
                     if (i === animIdx) img.classList.add('pop');
                     div.appendChild(img);
@@ -800,7 +800,7 @@
                 sfxLose();
                 screenFlash('rgba(225,29,72,0.08)');
                 spawnEmojis('😱', 25);
-                setStatus('הזעקה ניצחה! 😱', 'red', 'נסה שוב...');
+                setStatus('אזעקה ניצחה! 😱', 'red', 'נסה שוב...');
             }
         }
 
@@ -818,7 +818,7 @@
                 p2Card.classList.remove('dimmed');
                 p1Card.classList.remove('glow-blue');
                 p1Card.classList.add('dimmed');
-                setStatus('הזעקה חושבת... 🔥', 'red', '', true);
+                setStatus('אזעקה חושבת... 🔥', 'red', '', true);
             } else if (active) {
                 p1Card.classList.add('glow-blue');
                 p1Card.classList.remove('dimmed');
